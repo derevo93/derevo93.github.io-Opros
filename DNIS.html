@@ -111,6 +111,7 @@
         function startSurvey() {
             userName = document.getElementById("name").value;
             if (userName) {
+                document.getElementById("harashoSound").play(); // Проигрываем звук при начале опроса
                 document.getElementById("start").classList.add("hidden");
                 document.getElementById("survey").classList.remove("hidden");
                 loadQuestion();
@@ -147,7 +148,6 @@
             const nextBtn = document.getElementById("nextBtn");
             nextBtn.classList.remove("hidden");
             nextBtn.onclick = () => {
-                document.getElementById("harashoSound").play();
                 sendToTelegram(userName, questions[currentQuestionIndex].question, option);
                 currentQuestionIndex++;
                 if (currentQuestionIndex < questions.length) {
@@ -161,7 +161,7 @@
         function endSurvey() {
             document.getElementById("survey").classList.add("hidden");
             document.getElementById("end").classList.remove("hidden");
-            document.getElementById("botSound").play();
+            document.getElementById("botSound").play(); // Проигрываем звук при завершении опроса
         }
 
         function sendToTelegram(name, question, answer) {
